@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS CYBER (Mantido igual) ---
+# --- CSS CYBER ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
@@ -29,13 +29,13 @@ st.markdown("""
 
         html, body, [class*="css"] { font-family: 'Rajdhani', sans-serif; }
         
-        /* --- TICKER --- */
+        /* --- TICKER (LIVE) --- */
         .ticker-wrap {
             width: 100%; overflow: hidden; background-color: rgba(0, 0, 0, 0.6);
             border-bottom: 1px solid #00d4ff; border-top: 1px solid #00d4ff;
             padding: 10px 0; white-space: nowrap; box-sizing: border-box; margin-bottom: 20px;
         }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 25s linear infinite; } 
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 30s linear infinite; } 
         .ticker__item {
             display: inline-block; padding: 0 2rem; font-size: 1.2rem;
             color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #00ff41;
@@ -184,27 +184,27 @@ def get_total_sales_count():
     res = run_query("SELECT COUNT(*) FROM vendas")
     return res[0][0] if res else 0
 
-# --- LÓGICA DO TICKER ATUALIZADA ---
-# Agora ele busca o TOTAL por usuário e gera mensagens de conquista
+# --- LÓGICA DO TICKER ATUALIZADA (SOMENTE METAS) ---
 def get_global_ticker_data():
-    # Pega a soma de vendas agrupada por usuário
+    # Pega a soma TOTAL por usuário (apenas quem já passou dos 50k)
     res = run_query("SELECT username, SUM(valor) as total FROM vendas GROUP BY username HAVING total >= 50000 ORDER BY total DESC")
     
-    if not res: return ["🚀 A CORRIDA PELOS 50K COMEÇOU! BORA VENDER!"]
+    if not res: return ["🚀 A CORRIDA PELOS 50K ESTÁ ON! BORA VENDER!"]
     
     msgs = []
     for row in res:
-        user_nome = row[0].split()[0].upper() # Pega só o primeiro nome
+        user_nome = row[0].split()[0].upper() # Apenas o primeiro nome
         total_user = row[1]
         
+        # Gera apenas a mensagem da MAIOR meta atingida
         if total_user >= 150000:
-            msgs.append(f"💎 {user_nome} É UMA LENDA! (+150K)")
+            msgs.append(f"💎 {user_nome} BATEU A META DE 150 MIL!")
         elif total_user >= 101000:
-            msgs.append(f"💠 {user_nome} DESTRUIU A META DE 101K!")
+            msgs.append(f"💠 {user_nome} BATEU A META DE 101 MIL!")
         elif total_user >= 80000:
-            msgs.append(f"🥇 {user_nome} BATEU A META DE 80K!")
+            msgs.append(f"🥇 {user_nome} BATEU A META DE 80 MIL!")
         elif total_user >= 50000:
-            msgs.append(f"🥈 {user_nome} ENTROU NO JOGO (+50K)!")
+            msgs.append(f"🥈 {user_nome} BATEU A META DE 50 MIL!")
             
     return msgs
 
@@ -243,7 +243,7 @@ if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['username'] = ''
 
-# Controle de sessão para balões (para não repetir)
+# Controle para balões não repetirem
 if 'ultimo_nivel_comemorado' not in st.session_state:
     st.session_state['ultimo_nivel_comemorado'] = 0
 
@@ -314,7 +314,7 @@ else:
     user = st.session_state['username']
     role = st.session_state['role']
 
-    # --- NOVO TICKER (Live de Conquistas) ---
+    # TICKER (Live de Metas)
     ticker_msgs = get_global_ticker_data()
     ticker_html = f"""<div class="ticker-wrap"><div class="ticker">{' &nbsp;&nbsp;&nbsp;&nbsp; /// &nbsp;&nbsp;&nbsp;&nbsp; '.join([f'<div class="ticker__item">{m}</div>' for m in ticker_msgs])}</div></div>"""
     st.markdown(ticker_html, unsafe_allow_html=True)
@@ -355,12 +355,23 @@ else:
                 c = st.text_input("CLIENTE")
                 co = st.text_input("CONVÊNIO")
                 p = st.selectbox("PRODUTO", ["EMPRÉSTIMO", "CARTÃO RMC", "BENEFICIO"])
-                v = st.number_input("VALOR (R$)", min_value=0.0)
+                
+                # --- AQUI ESTÁ A CORREÇÃO DO VALOR 0.00 ---
+                # value=None faz o campo nascer "vazio"
+                # placeholder="0.00" mostra o fantasma do zero
+                v = st.number_input("VALOR (R$)", min_value=0.0, value=None, placeholder="0.00")
+                
                 if st.form_submit_button("PROCESSAR DADOS 🚀"):
-                    add_venda(user, d, c, co, p, v)
-                    st.toast("Salvo!", icon="💾")
-                    time.sleep(0.5)
-                    st.rerun()
+                    # Se o usuário não digitar nada (None), assume 0.0
+                    val_final = v if v is not None else 0.0
+                    
+                    if val_final > 0:
+                        add_venda(user, d, c, co, p, val_final)
+                        st.toast("Salvo!", icon="💾")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.warning("Digite um valor válido!")
 
         filtro = user
         if role == 'admin':
@@ -400,8 +411,7 @@ else:
             if total >= 150000: st.markdown("🏆 **LENDÁRIO!**")
             elif total >= META_ATUAL: st.markdown("🚀 **SUBIU DE NÍVEL!**")
 
-        # --- LÓGICA DE BALÕES ATUALIZADA (COMEMORAÇÃO EXATA) ---
-        # Só solta balões se for a visão do próprio usuário e ele tiver subido de nível NESTA sessão
+        # --- BALÕES APENAS QUANDO ATINGE NOVA META ---
         if filtro == user:
             novo_nivel = 0
             if total >= 150000: novo_nivel = 150000
@@ -409,10 +419,10 @@ else:
             elif total >= 80000: novo_nivel = 80000
             elif total >= 50000: novo_nivel = 50000
             
-            # Se atingiu um novo nível que ainda não foi comemorado agora
+            # Se o nível atual for MAIOR que o último comemorado, solta balão
             if novo_nivel > st.session_state['ultimo_nivel_comemorado']:
                 st.balloons()
-                st.toast(f"PARABÉNS! VOCÊ BATEU A META DE {novo_nivel/1000:.0f}K!", icon="🎉")
+                st.toast(f"PARABÉNS! VOCÊ BATEU A META DE {novo_nivel/1000:.0f} MIL!", icon="🎉")
                 st.session_state['ultimo_nivel_comemorado'] = novo_nivel
 
         st.markdown("<br>", unsafe_allow_html=True)
