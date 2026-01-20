@@ -301,14 +301,15 @@ else:
     user = st.session_state['username']
     role = st.session_state['role']
 
-    # TICKER
-    if 'last_sales_count' not in st.session_state: st.session_state['last_sales_count'] = 0
-    current_sales_count = get_total_sales_count()
-    if current_sales_count > st.session_state['last_sales_count']:
-        ticker_msgs = get_global_ticker_data()
-        ticker_html = f"""<div class="ticker-wrap"><div class="ticker">{' &nbsp;&nbsp;&nbsp;&nbsp; /// &nbsp;&nbsp;&nbsp;&nbsp; '.join([f'<div class="ticker__item">{m}</div>' for m in ticker_msgs])}</div></div>"""
-        st.markdown(ticker_html, unsafe_allow_html=True)
-        st.session_state['last_sales_count'] = current_sales_count
+    # TICKER (MODO SEMPRE VISÍVEL)
+    # Removemos a verificação "if current > last". Agora ele carrega sempre.
+    ticker_msgs = get_global_ticker_data()
+    
+    # Se a lista vier vazia (banco zerado), garante uma mensagem padrão
+    if not ticker_msgs: ticker_msgs = ["💎 Sistema Starbank Online - Homologação"]
+    
+    ticker_html = f"""<div class="ticker-wrap"><div class="ticker">{' &nbsp;&nbsp;&nbsp;&nbsp; /// &nbsp;&nbsp;&nbsp;&nbsp; '.join([f'<div class="ticker__item">{m}</div>' for m in ticker_msgs])}</div></div>"""
+    st.markdown(ticker_html, unsafe_allow_html=True)
 
     # --- SIDEBAR ---
     with st.sidebar:
