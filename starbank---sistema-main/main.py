@@ -35,10 +35,10 @@ st.markdown("""
             border-bottom: 1px solid #00d4ff; border-top: 1px solid #00d4ff;
             padding: 10px 0; white-space: nowrap; box-sizing: border-box; margin-bottom: 20px;
         }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 20s linear infinite; } #INFINITE - RODANDO PARA SEMPRE A LIVE // 1 forwards roda uma vez
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 20s linear infinite; } 
         .ticker__item {
             display: inline-block; padding: 0 2rem; font-size: 1.2rem;
-            color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #00ff41; # COR DAS LETRAS DA LIVE
+            color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #00ff41;
         }
         @keyframes ticker-anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
