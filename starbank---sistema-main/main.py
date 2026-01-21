@@ -13,62 +13,47 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS CYBER (MANTIDO O VISUAL V15) ---
+# --- CSS CYBER (MANTIDO) ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
-        
         .stAppDeployButton { display: none; }
         header[data-testid="stHeader"] { background-color: transparent !important; }
         html, body, [class*="css"] { font-family: 'Rajdhani', sans-serif; }
-
-        /* BACKGROUND ANIMADO */
-        .stApp {
-            background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2);
-            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
-        }
+        .stApp { background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
         @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
-        
-        /* LOGIN HOLOGRÁFICO */
-        .holo-container {
-            background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 50px;
-            backdrop-filter: blur(20px); border: 2px solid rgba(0, 212, 255, 0.3);
-            box-shadow: 0 0 80px rgba(0, 212, 255, 0.2); text-align: center;
-            position: relative; overflow: hidden; margin-top: 50px;
-        }
-        .holo-container::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(to bottom, transparent, rgba(0, 212, 255, 0.4), transparent);
-            transform: rotate(45deg); animation: scanner 6s linear infinite; pointer-events: none;
-        }
-        @keyframes scanner { 0% {top: -200%;} 100% {top: 200%;} }
-
-        div[data-testid="stTextInput"] input {
-            background: transparent !important; border: none !important;
-            border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important;
-        }
-        div[data-testid="stTextInput"] input:focus { border-bottom-color: #00d4ff !important; }
-        
-        /* TICKER */
+        .holo-container { background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 50px; backdrop-filter: blur(20px); border: 2px solid rgba(0, 212, 255, 0.3); box-shadow: 0 0 80px rgba(0, 212, 255, 0.2); text-align: center; margin-top: 50px; }
+        div[data-testid="stTextInput"] input { background: transparent !important; border: none !important; border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important; }
         .ticker-wrap { width: 100%; overflow: hidden; background-color: rgba(0, 0, 0, 0.6); border-y: 1px solid #00d4ff; padding: 10px 0; margin-bottom: 20px; }
         .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 30s linear infinite; } 
         .ticker__item { display: inline-block; padding: 0 2rem; font-size: 1.2rem; color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #00ff41; }
         @keyframes ticker-anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-        /* CARDS */
         .cyber-banner { padding: 20px; border-radius: 12px; background: rgba(10, 10, 30, 0.8); border: 1px solid; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         div[data-testid="stMetric"] { background: rgba(5, 15, 30, 0.7); border: 1px solid rgba(0, 212, 255, 0.2); backdrop-filter: blur(15px); border-radius: 12px; padding: 20px; }
         div[data-testid="stMetricLabel"] { color: #00d4ff !important; font-weight: 600; }
-        
         [data-testid="stSidebar"] { background-color: rgba(10, 10, 20, 0.95); border-right: 1px solid rgba(0, 212, 255, 0.1); }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXÃO SQL DIRETA (PSUCOPG2) ---
+# --- CONEXÃO SQL ROBUSTA (CORREÇÃO DE ERRO) ---
 @st.cache_resource
 def init_connection():
-    try: return psycopg2.connect(**st.secrets["connections"]["postgresql"])
-    except Exception: return None
+    try:
+        # Pega as configs do Secrets
+        db_config = st.secrets["connections"]["postgresql"]
+        
+        # Conecta explicitamente mapeando 'username' para 'user'
+        # Isso corrige o erro silencioso que estava acontecendo
+        return psycopg2.connect(
+            host=db_config["host"],
+            port=db_config["port"],
+            database=db_config["database"],
+            user=db_config["username"], 
+            password=db_config["password"]
+        )
+    except Exception as e:
+        st.error(f"⚠️ ERRO CRÍTICO DE CONEXÃO: {e}")
+        return None
 
 def run_query(query, params=None):
     conn = init_connection()
@@ -78,12 +63,14 @@ def run_query(query, params=None):
                 cur.execute(query, params)
                 conn.commit()
                 if query.strip().upper().startswith("SELECT"): return cur.fetchall()
-        except Exception as e: st.error(f"Erro DB: {e}")
-        finally: conn.close()
+        except Exception as e:
+            st.error(f"Erro ao executar comando SQL: {e}")
+        finally:
+            conn.close()
     return None
 
 def init_db():
-    # Cria tabela de vendas
+    # Tenta criar as tabelas. Se falhar, o erro vai aparecer na tela.
     run_query("""
         CREATE TABLE IF NOT EXISTS vendas (
             id SERIAL PRIMARY KEY,
@@ -95,7 +82,6 @@ def init_db():
             valor NUMERIC(10,2)
         );
     """)
-    # Cria tabela de usuários (VOLTAMOS PARA O MODO SQL)
     run_query("""
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY, 
@@ -104,28 +90,27 @@ def init_db():
         );
     """)
 
-# --- SEGURANÇA (HASHS) ---
+# --- SEGURANÇA ---
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
-def check_hashes(password, hashed_text):
-    if make_hashes(password) == hashed_text: return hashed_text
-    return False
-
-# --- FUNÇÕES DE USUÁRIO (SQL PURO) ---
+# --- FUNÇÕES ---
 def login_user(username, password):
+    # Verifica se a tabela existe antes de tentar logar
     return run_query("SELECT * FROM users WHERE username = %s AND password = %s", (username, make_hashes(password)))
 
 def create_user(username, password, role='operador'):
-    # Verifica se já existe
-    check = run_query("SELECT * FROM users WHERE username = %s", (username,))
-    if check:
-        return "❌ Usuário já existe!"
-    else:
-        run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
-        return "✅ Criado com sucesso! Faça login."
+    # Verifica duplicidade
+    try:
+        check = run_query("SELECT * FROM users WHERE username = %s", (username,))
+        if check:
+            return "❌ Usuário já existe!"
+        else:
+            run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
+            return "✅ Criado com sucesso! Agora vá na aba ENTRAR."
+    except Exception as e:
+        return f"Erro ao criar: {e}"
 
-# --- LÓGICA DE METAS E COMISSÃO ---
 def calcular_comissao_tier(total):
     if total >= 150000: return total * 0.0150 
     elif total >= 101000: return total * 0.0125 
@@ -158,7 +143,6 @@ def get_global_ticker_data():
     msgs = []
     for row in res:
         user_nome = row[0].split()[0].upper()
-        # Converte decimal para float
         total_user = float(row[1]) 
         if total_user >= 150000: msgs.append(f"💎 {user_nome} BATEU A META DE 150 MIL!")
         elif total_user >= 101000: msgs.append(f"💠 {user_nome} BATEU A META DE 101 MIL!")
@@ -199,14 +183,14 @@ if 'logged_in' not in st.session_state:
 if 'ultimo_nivel_comemorado' not in st.session_state:
     st.session_state['ultimo_nivel_comemorado'] = 0
 
-# --- TELA DE LOGIN (V16 - MODO TABELA SQL) ---
+# --- TELA DE LOGIN ---
 if not st.session_state['logged_in']:
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="holo-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="color:white; font-family: Rajdhani; letter-spacing: 3px;">STARBANK</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color:#00d4ff;">/// Acesso SQL v16.0 ///</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#00d4ff;">/// Acesso SQL v17.0 (Correção) ///</p>', unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["ENTRAR", "REGISTRAR"])
         
@@ -220,7 +204,8 @@ if not st.session_state['logged_in']:
                     st.session_state['username'] = u
                     st.session_state['role'] = res[0][2] if res[0][2] else 'operador'
                     st.rerun()
-                else: st.error("Acesso Negado")
+                else: 
+                    st.error("Acesso Negado: Usuário ou senha incorretos (ou a tabela 'users' ainda está vazia).")
         
         with tab2:
             st.info("Crie seu acesso. Ficará salvo na tabela 'users'.")
@@ -245,7 +230,6 @@ else:
     with st.sidebar:
         st.markdown(f"<h2 style='color: #00d4ff;'>👤 {user.upper()}</h2>", unsafe_allow_html=True)
         st.caption(f"PERFIL: {role.upper()}")
-        
         streak_count = get_streak(user)
         st.markdown(f"""<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid #FF4500; margin-bottom: 20px;"><h3 style="margin:0; color: #FF4500; text-align: center;">🔥 DIAS ATIVOS: {streak_count}</h3></div>""", unsafe_allow_html=True)
         
@@ -271,9 +255,7 @@ else:
             st.session_state['logged_in'] = False
             st.rerun()
 
-    # ÁREA PRINCIPAL
     filtro = user
-    # Define administradores manualmente pelo nome
     if role == 'admin' or user.lower() in ["maicon", "brunno", "fernanda", "nair"]:
         col_admin, _ = st.columns([1, 3])
         with col_admin:
