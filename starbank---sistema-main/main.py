@@ -13,147 +13,67 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS GLOBAL CORRIGIDO ---
+# --- CSS GLOBAL ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
-        
-        /* CORREÇÃO: Não esconder o header inteiro, apenas o botão de deploy */
         .stAppDeployButton { display: none; }
-        
-        /* Deixar o header transparente para fundir com o design */
-        header[data-testid="stHeader"] {
-            background-color: transparent !important;
-        }
-
-        /* Pintar a setinha de abrir/fechar menu de Azul Cyan */
-        button[kind="header"] {
-            color: #00d4ff !important;
-        }
-        [data-testid="collapsedControl"] {
-            color: #00d4ff !important;
-        }
-
-        /* Fonte Padrão */
+        header[data-testid="stHeader"] { background-color: transparent !important; }
+        button[kind="header"] { color: #00d4ff !important; }
+        [data-testid="collapsedControl"] { color: #00d4ff !important; }
         html, body, [class*="css"] { font-family: 'Rajdhani', sans-serif; }
         
-        /* --- TICKER (LETREIRO DIGITAL) --- */
-        .ticker-wrap {
-            width: 100%;
-            overflow: hidden;
-            background-color: rgba(0, 0, 0, 0.6);
-            border-bottom: 1px solid #00d4ff;
-            border-top: 1px solid #00d4ff;
-            padding: 10px 0;
-            white-space: nowrap;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        }
-        .ticker {
-            display: inline-block;
-            padding-left: 100%;
-            /* Roda 1 vez e para (forwards mantem o estado final ou some dependendo do wrap) */
-            animation: ticker-anim 15s linear 1; 
-        }
-        .ticker__item {
-            display: inline-block;
-            padding: 0 2rem;
-            font-size: 1.2rem;
-            color: #00ff41; /* Verde Matrix */
-            font-weight: bold;
-            text-shadow: 0 0 5px #00ff41;
-        }
-        @keyframes ticker-anim {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
+        /* TICKER */
+        .ticker-wrap { width: 100%; overflow: hidden; background-color: rgba(0, 0, 0, 0.6); border-y: 1px solid #00d4ff; padding: 10px 0; margin-bottom: 20px; }
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 15s linear 1; } 
+        .ticker__item { display: inline-block; padding: 0 2rem; font-size: 1.2rem; color: #00ff41; font-weight: bold; text-shadow: 0 0 5px #00ff41; }
+        @keyframes ticker-anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* --- ANIMAÇÕES GERAIS --- */
-        @keyframes slideInUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .cyber-banner { animation: slideInUp 0.6s ease-out both; }
-        .stProgress { animation: slideInUp 0.6s ease-out 0.2s both; }
-        div[data-testid="stMetric"] { animation: slideInUp 0.6s ease-out 0.4s both; }
-        .stChart, .stDataFrame { animation: slideInUp 0.8s ease-out 0.6s both; }
-
-        /* Fundo e Sidebar */
-        .stApp {
-            background: linear-gradient(to bottom, #02010a, #090a1f);
-            background-size: 200% 200%; animation: darkPulse 10s ease infinite;
-        }
-        @keyframes darkPulse {
-            0% {background-position: 0% 0%;} 50% {background-position: 0% 100%;} 100% {background-position: 0% 0%;}
-        }
-        [data-testid="stSidebar"] {
-            background-color: rgba(10, 10, 20, 0.95);
-            border-right: 1px solid rgba(0, 212, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Cards 3D */
-        div[data-testid="column"] { perspective: 1000px; }
-        div[data-testid="stMetric"] {
-            background: rgba(5, 15, 30, 0.7);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.05);
-            backdrop-filter: blur(15px); border-radius: 12px; padding: 20px;
-            animation: borderPulse 4s ease-in-out infinite alternate;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
-            transform-style: preserve-3d;
-        }
-        div[data-testid="stMetric"]:hover {
-            transform: translateY(-10px) rotateX(5deg);
-            border-color: #00d4ff;
-            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.3), 0 0 10px rgba(0, 212, 255, 0.5) !important;
-            background: rgba(5, 15, 30, 0.9);
-        }
-        @keyframes borderPulse {
-            0% { border-color: rgba(0, 212, 255, 0.2); }
-            100% { border-color: rgba(123, 31, 162, 0.4); }
-        }
-        div[data-testid="stMetricLabel"] { color: #00d4ff !important; font-weight: 600; letter-spacing: 1px; }
-        div[data-testid="stMetricValue"] { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        /* BANNER E CARDS */
+        .cyber-banner { padding: 20px; border-radius: 12px; background: rgba(10, 10, 30, 0.8); border: 1px solid; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .stApp { background: linear-gradient(to bottom, #02010a, #090a1f); background-size: 200% 200%; animation: darkPulse 10s ease infinite; }
+        @keyframes darkPulse { 0% {background-position: 0% 0%;} 50% {background-position: 0% 100%;} 100% {background-position: 0% 0%;} }
+        [data-testid="stSidebar"] { background-color: rgba(10, 10, 20, 0.95); border-right: 1px solid rgba(0, 212, 255, 0.1); }
         
-        .cyber-banner {
-            padding: 20px; border-radius: 12px; background: rgba(10, 10, 30, 0.8);
-            border: 1px solid; position: relative; overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .cyber-banner::after {
-            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            animation: scannerBanner 4s ease-in-out infinite; pointer-events: none;
-        }
-        @keyframes scannerBanner { 0% {left: -100%;} 100% {left: 200%;} }
-        
-        .stButton > button {
-            background: transparent; border: 1px solid #00d4ff; color: #00d4ff;
-            font-family: 'Rajdhani'; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s;
-        }
-        .stButton > button:hover {
-            background: rgba(0, 212, 255, 0.2); box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); transform: scale(1.02);
-        }
+        div[data-testid="stMetric"] { background: rgba(5, 15, 30, 0.7); border: 1px solid rgba(0, 212, 255, 0.2); backdrop-filter: blur(15px); border-radius: 12px; padding: 20px; }
+        div[data-testid="stMetricLabel"] { color: #00d4ff !important; font-weight: 600; }
+        div[data-testid="stMetricValue"] { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .stButton > button { background: transparent; border: 1px solid #00d4ff; color: #00d4ff; font-family: 'Rajdhani'; transition: all 0.3s; }
+        .stButton > button:hover { background: rgba(0, 212, 255, 0.2); transform: scale(1.02); }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXÃO DB ---
+# --- CONEXÃO DB (AJUSTADA PARA SEUS SECRETS) ---
 @st.cache_resource
 def init_connection():
-    if "DATABASE_URL" in st.secrets:
-        return psycopg2.connect(st.secrets["DATABASE_URL"])
-    return None
+    try:
+        # Aqui ele pega os campos individuais do seu secrets.toml
+        db_config = st.secrets["connections"]["postgresql"]
+        return psycopg2.connect(
+            host=db_config["host"],
+            port=db_config["port"],
+            database=db_config["database"],
+            user=db_config["username"],
+            password=db_config["password"]
+        )
+    except Exception as e:
+        st.error(f"Erro de conexão com o Banco: {e}")
+        return None
 
 def run_query(query, params=None):
     conn = init_connection()
     if conn:
-        with conn.cursor() as cur:
-            cur.execute(query, params)
-            if query.strip().upper().startswith("SELECT"):
-                return cur.fetchall()
-            else:
-                conn.commit()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                if query.strip().upper().startswith("SELECT"):
+                    return cur.fetchall()
+                else:
+                    conn.commit()
+        except Exception as e:
+            st.error(f"Erro SQL: {e}")
+            # Se der erro, tenta resetar a conexão para a próxima vez
+            st.cache_resource.clear()
     return None
 
 def make_hashes(password):
@@ -192,7 +112,9 @@ def get_global_ticker_data():
     msgs = []
     for row in res:
         user_short = row[0].split()[0]
-        msgs.append(f"⚡ LIVE: {user_short.upper()} VENDEU R$ {row[1]:,.2f} ({row[2]})")
+        # Garante que é float antes de formatar
+        val = float(row[1])
+        msgs.append(f"⚡ LIVE: {user_short.upper()} VENDEU R$ {val:,.2f} ({row[2]})")
     msgs.append("🚀 FOCO NA META: R$ 50k")
     return msgs
 
@@ -205,7 +127,13 @@ def get_user_role(username):
     return res[0][0] if res else 'operador'
 
 def create_user(username, password, role='operador'):
-    run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
+    # Verifica duplicidade antes de inserir
+    check = run_query("SELECT * FROM users WHERE username = %s", (username,))
+    if check:
+        st.error("Usuário já existe!")
+    else:
+        run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
+        st.success("Criado com sucesso!")
 
 def add_venda(username, data, cliente, convenio, produto, valor):
     run_query("INSERT INTO vendas(username, data, cliente, convenio, produto, valor) VALUES (%s, %s, %s, %s, %s, %s)", (username, data, cliente, convenio, produto, valor))
@@ -219,9 +147,11 @@ def get_vendas_df(target_user=None):
     if conn:
         query = "SELECT id, username, data, cliente, convenio, produto, valor FROM vendas"
         if target_user and target_user != "Todos":
-            query += " WHERE username = %(user)s"
-            return pd.read_sql(query, conn, params={"user": target_user})
-        return pd.read_sql(query, conn)
+            # Pandas read_sql com params para segurança
+            df = pd.read_sql(query + " WHERE username = %s", conn, params=(target_user,))
+        else:
+            df = pd.read_sql(query, conn)
+        return df
     return pd.DataFrame()
 
 def delete_venda(venda_id):
@@ -240,10 +170,6 @@ def init_db():
     try:
         run_query("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT);")
         run_query("CREATE TABLE IF NOT EXISTS vendas (id SERIAL PRIMARY KEY, username TEXT, data DATE, cliente TEXT, convenio TEXT, produto TEXT, valor NUMERIC(10,2));")
-        supervisores = ["Maicon Nascimento", "Brunno Leonard", "Fernanda Gomes"]
-        senha_padrao = make_hashes("123456")
-        for chefe in supervisores:
-            run_query("INSERT INTO users (username, password, role) VALUES (%s, %s, %s) ON CONFLICT (username) DO NOTHING;", (chefe, senha_padrao, "admin"))
     except: pass
 
 init_db()
@@ -266,15 +192,9 @@ if not st.session_state['logged_in'] and "user" in qp and "token" in qp:
 if not st.session_state['logged_in']:
     st.markdown("""
         <style>
-            .stApp {
-                background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2);
-                background-size: 400% 400%; animation: gradientBG 15s ease infinite;
-            }
-            @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
             .holo-container {
                 background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 50px;
-                backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-                border: 2px solid rgba(0, 212, 255, 0.3); box-shadow: 0 0 80px rgba(0, 212, 255, 0.2);
+                backdrop-filter: blur(20px); border: 2px solid rgba(0, 212, 255, 0.3); box-shadow: 0 0 80px rgba(0, 212, 255, 0.2);
                 text-align: center; position: relative; overflow: hidden;
             }
             .holo-container::before {
@@ -302,10 +222,11 @@ if not st.session_state['logged_in']:
             u = st.text_input("NOME DO OPERADOR", key="l_u")
             p = st.text_input("CHAVE DE ACESSO", type="password", key="l_p")
             if st.button("INICIAR CONEXÃO >>>", type="primary"):
-                if login_user(u, p):
+                res = login_user(u, p)
+                if res:
                     st.session_state['logged_in'] = True
                     st.session_state['username'] = u
-                    st.session_state['role'] = get_user_role(u)
+                    st.session_state['role'] = res[0][2] if res[0][2] else 'operador' # Garante role
                     st.query_params["user"] = u
                     st.query_params["token"] = generate_session_token(u)
                     st.rerun()
@@ -314,16 +235,18 @@ if not st.session_state['logged_in']:
             nu = st.text_input("Novo ID", key="n_u")
             np = st.text_input("Nova Senha", type="password", key="n_p")
             if st.button("CRIAR"):
-                try: create_user(nu, np); st.success("Criado!")
-                except: st.error("Erro")
+                if nu and np:
+                    create_user(nu, np)
+                else:
+                    st.warning("Preencha todos os campos")
         st.markdown('</div>', unsafe_allow_html=True)
 
 else:
     # ==================================================
-    # DASHBOARD CYBERPUNK (FINAL)
+    # DASHBOARD CYBERPUNK
     # ==================================================
     user = st.session_state['username']
-    role = st.session_state['role']
+    role = st.session_state.get('role', 'operador')
 
     # --- LÓGICA DO TICKER ---
     if 'last_sales_count' not in st.session_state:
@@ -337,16 +260,16 @@ else:
     else:
         show_ticker = False
     
-    if show_ticker:
-        ticker_msgs = get_global_ticker_data()
-        ticker_html = f"""
-        <div class="ticker-wrap">
-            <div class="ticker">
-                {' &nbsp;&nbsp;&nbsp;&nbsp; /// &nbsp;&nbsp;&nbsp;&nbsp; '.join([f'<div class="ticker__item">{m}</div>' for m in ticker_msgs])}
-            </div>
+    # Sempre mostra o ticker se quiser, ou só quando atualiza. Vou deixar fixo pra ficar bonito
+    ticker_msgs = get_global_ticker_data()
+    ticker_html = f"""
+    <div class="ticker-wrap">
+        <div class="ticker">
+            {' &nbsp;&nbsp;&nbsp;&nbsp; /// &nbsp;&nbsp;&nbsp;&nbsp; '.join([f'<div class="ticker__item">{m}</div>' for m in ticker_msgs])}
         </div>
-        """
-        st.markdown(ticker_html, unsafe_allow_html=True)
+    </div>
+    """
+    st.markdown(ticker_html, unsafe_allow_html=True)
 
     # --- SIDEBAR ---
     streak_count = get_streak(user)
@@ -371,14 +294,20 @@ else:
             p = st.selectbox("PRODUTO", ["EMPRÉSTIMO", "CARTÃO RMC", "BENEFICIO"])
             v = st.number_input("VALOR (R$)", min_value=0.0)
             if st.form_submit_button("PROCESSAR DADOS 🚀"):
-                add_venda(user, d, c, co, p, v)
-                st.toast("Transação registrada! Ticker ativado.", icon="💾")
-                time.sleep(1)
-                st.rerun()
+                if v > 0:
+                    add_venda(user, d, c, co, p, v)
+                    st.toast("Transação registrada!", icon="💾")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.warning("Valor inválido")
 
     # --- ÁREA PRINCIPAL ---
     filtro = user
-    if role == 'admin':
+    # Lista de admins manuais se role não estiver funcionando direito
+    admins = ["Maicon Nascimento", "Brunno Leonard", "Fernanda Gomes", "Christian Serello"]
+    
+    if role == 'admin' or user in admins:
         op = ["Todos"] + get_all_users()
         sel = st.selectbox("VISÃO GLOBAL (ADMIN):", op)
         filtro = "Todos" if sel == "Todos" else sel
@@ -401,8 +330,9 @@ else:
 
     col_prog, col_meta = st.columns([3, 1])
     with col_prog:
-        st.markdown(f"<br>Please **PROGRESSO DA MISSÃO ({min(total/META*100, 100):.1f}%)**", unsafe_allow_html=True)
-        st.progress(min(total/META, 1.0))
+        progresso_pct = min(total / META, 1.0)
+        st.markdown(f"<br>Please **PROGRESSO DA MISSÃO ({progresso_pct*100:.1f}%)**", unsafe_allow_html=True)
+        st.progress(progresso_pct)
     with col_meta:
         st.markdown("<br>", unsafe_allow_html=True)
         if total >= META: st.markdown("🏆 **OBJETIVO ALCANÇADO!**")
@@ -412,7 +342,7 @@ else:
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("VOLUME TOTAL", f"R$ {total:,.2f}", delta="Processado")
     k2.metric("COMISSÃO ESTIMADA", f"R$ {total*0.01:,.2f}", delta="Crédito")
-    k3.metric("ALVO RESTANTE", f"R$ {META-total:,.2f}", delta="Pendente", delta_color="inverse")
+    k3.metric("ALVO RESTANTE", f"R$ {max(META-total, 0):,.2f}", delta="Pendente", delta_color="inverse")
     k4.metric("META MENSAL", f"R$ {META:,.2f}", delta="Fixo")
 
     st.divider()
