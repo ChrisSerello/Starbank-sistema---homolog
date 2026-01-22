@@ -3,6 +3,7 @@ import pandas as pd
 import psycopg2
 import hashlib
 import time
+import urllib.parse # Necessário para corrigir o erro da senha com @
 from datetime import date, timedelta
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -17,28 +18,23 @@ st.set_page_config(
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
-        
         .stAppDeployButton { display: none; }
-        
         header[data-testid="stHeader"] { background-color: transparent !important; }
         button[kind="header"] { color: #00d4ff !important; }
         [data-testid="collapsedControl"] { color: #00d4ff !important; }
-
         html, body, [class*="css"] { font-family: 'Rajdhani', sans-serif; }
 
-        /* --- FUNDO ANIMADO (RESTAURADO) --- */
+        /* FUNDO ANIMADO */
         .stApp {
             background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
         }
         @keyframes gradientBG {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
+            0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;}
         }
         
-        /* --- LOGIN HOLOGRÁFICO --- */
+        /* LOGIN HOLOGRÁFICO */
         .holo-container {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
@@ -62,7 +58,6 @@ st.markdown("""
             background: transparent !important; border: none !important;
             border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important;
         }
-        div[data-testid="stTextInput"] input:focus { border-bottom-color: #00d4ff !important; }
         
         /* TICKER */
         .ticker-wrap { width: 100%; overflow: hidden; background-color: rgba(0, 0, 0, 0.6); border-y: 1px solid #00d4ff; padding: 10px 0; margin-bottom: 20px; }
@@ -78,18 +73,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXÃO DB (MODO URI - RESOLVE ERRO DE TENANT) ---
+# --- CONEXÃO DB (CORREÇÃO DE SENHA COM @) ---
 @st.cache_resource
 def init_connection():
     try:
         s = st.secrets["connections"]["postgresql"]
-        # Montamos a string de conexão manualmente para garantir que o Pooler entenda quem é o usuário
-        # Formato: postgres://usuario:senha@host:porta/database
-        dsn = f"postgresql://{s['username']}:{s['password']}@{s['host']}:{s['port']}/{s['database']}?sslmode=require"
+        
+        # AQUI ESTÁ A CORREÇÃO:
+        # Codificamos a senha para que o símbolo '@' não quebre o link
+        password_encoded = urllib.parse.quote_plus(s['password'])
+        
+        # Montamos o link usando a senha codificada
+        dsn = f"postgresql://{s['username']}:{password_encoded}@{s['host']}:{s['port']}/{s['database']}?sslmode=require"
         
         return psycopg2.connect(dsn)
     except Exception as e:
-        st.error(f"Erro ao conectar (Verifique se a senha no Secrets é 'Starbank2026'): {e}")
+        st.error(f"Erro de Conexão: {e}")
         return None
 
 def run_query(query, params=None):
@@ -226,7 +225,7 @@ if not st.session_state['logged_in']:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="holo-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="color:white; font-family: Rajdhani; letter-spacing: 3px;">STARBANK</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color:#00d4ff;">/// Acesso Seguro v19.0 ///</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#00d4ff;">/// Acesso Seguro v19.1 ///</p>', unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["ENTRAR", "REGISTRAR"])
         with tab1:
