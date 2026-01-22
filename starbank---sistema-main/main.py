@@ -3,7 +3,6 @@ import pandas as pd
 import psycopg2
 import hashlib
 import time
-import urllib.parse # Necessário para corrigir o erro da senha com @
 from datetime import date, timedelta
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -73,20 +72,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXÃO DB (CORREÇÃO DE SENHA COM @) ---
+# --- CONEXÃO DB (MODO PARÂMETRO - RESOLVE ERRO DO ARROBA NA SENHA) ---
 @st.cache_resource
 def init_connection():
     try:
         s = st.secrets["connections"]["postgresql"]
         
-        # AQUI ESTÁ A CORREÇÃO:
-        # Codificamos a senha para que o símbolo '@' não quebre o link
-        password_encoded = urllib.parse.quote_plus(s['password'])
-        
-        # Montamos o link usando a senha codificada
-        dsn = f"postgresql://{s['username']}:{password_encoded}@{s['host']}:{s['port']}/{s['database']}?sslmode=require"
-        
-        return psycopg2.connect(dsn)
+        # MUDANÇA CRUCIAL: Passamos os dados separados.
+        # Isso impede que o "@" da senha confunda o sistema com o endereço do site.
+        return psycopg2.connect(
+            host=s["host"],
+            port=s["port"],
+            database=s["database"],
+            user=s["username"], # Deve ser o longo: postgres.wsiiv...
+            password=s["password"] # Sua senha com @ passa limpa aqui
+        )
     except Exception as e:
         st.error(f"Erro de Conexão: {e}")
         return None
@@ -225,7 +225,7 @@ if not st.session_state['logged_in']:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="holo-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="color:white; font-family: Rajdhani; letter-spacing: 3px;">STARBANK</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color:#00d4ff;">/// Acesso Seguro v19.1 ///</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#00d4ff;">/// Acesso Seguro v19.2 ///</p>', unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["ENTRAR", "REGISTRAR"])
         with tab1:
