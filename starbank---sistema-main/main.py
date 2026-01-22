@@ -13,51 +13,83 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS GLOBAL ---
+# --- CSS V15 RESTAURADO (FUNDO AZUL/ROXO ANIMADO) ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
+        
         .stAppDeployButton { display: none; }
+        
         header[data-testid="stHeader"] { background-color: transparent !important; }
         button[kind="header"] { color: #00d4ff !important; }
         [data-testid="collapsedControl"] { color: #00d4ff !important; }
+
         html, body, [class*="css"] { font-family: 'Rajdhani', sans-serif; }
+
+        /* --- FUNDO ANIMADO (RESTAURADO) --- */
+        .stApp {
+            background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+        
+        /* --- LOGIN HOLOGRÁFICO --- */
+        .holo-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 50px;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 80px rgba(0, 212, 255, 0.2);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            margin-top: 50px;
+        }
+        .holo-container::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(to bottom, transparent, rgba(0, 212, 255, 0.4), transparent);
+            transform: rotate(45deg); animation: scanner 6s linear infinite; pointer-events: none;
+        }
+        @keyframes scanner { 0% {top: -200%;} 100% {top: 200%;} }
+
+        div[data-testid="stTextInput"] input {
+            background: transparent !important; border: none !important;
+            border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important;
+        }
+        div[data-testid="stTextInput"] input:focus { border-bottom-color: #00d4ff !important; }
         
         /* TICKER */
         .ticker-wrap { width: 100%; overflow: hidden; background-color: rgba(0, 0, 0, 0.6); border-y: 1px solid #00d4ff; padding: 10px 0; margin-bottom: 20px; }
-        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 15s linear 1; } 
-        .ticker__item { display: inline-block; padding: 0 2rem; font-size: 1.2rem; color: #00ff41; font-weight: bold; text-shadow: 0 0 5px #00ff41; }
+        .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 30s linear infinite; } 
+        .ticker__item { display: inline-block; padding: 0 2rem; font-size: 1.2rem; color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #00ff41; }
         @keyframes ticker-anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* BANNER E CARDS */
+        /* CARDS */
         .cyber-banner { padding: 20px; border-radius: 12px; background: rgba(10, 10, 30, 0.8); border: 1px solid; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .stApp { background: linear-gradient(to bottom, #02010a, #090a1f); background-size: 200% 200%; animation: darkPulse 10s ease infinite; }
-        @keyframes darkPulse { 0% {background-position: 0% 0%;} 50% {background-position: 0% 100%;} 100% {background-position: 0% 0%;} }
-        [data-testid="stSidebar"] { background-color: rgba(10, 10, 20, 0.95); border-right: 1px solid rgba(0, 212, 255, 0.1); }
-        
         div[data-testid="stMetric"] { background: rgba(5, 15, 30, 0.7); border: 1px solid rgba(0, 212, 255, 0.2); backdrop-filter: blur(15px); border-radius: 12px; padding: 20px; }
         div[data-testid="stMetricLabel"] { color: #00d4ff !important; font-weight: 600; }
-        div[data-testid="stMetricValue"] { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .stButton > button { background: transparent; border: 1px solid #00d4ff; color: #00d4ff; font-family: 'Rajdhani'; transition: all 0.3s; }
-        .stButton > button:hover { background: rgba(0, 212, 255, 0.2); transform: scale(1.02); }
+        [data-testid="stSidebar"] { background-color: rgba(10, 10, 20, 0.95); border-right: 1px solid rgba(0, 212, 255, 0.1); }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXÃO DB (AJUSTADA PARA SEUS SECRETS) ---
+# --- CONEXÃO DB (MODO URI - RESOLVE ERRO DE TENANT) ---
 @st.cache_resource
 def init_connection():
     try:
-        # Aqui ele pega os campos individuais do seu secrets.toml
-        db_config = st.secrets["connections"]["postgresql"]
-        return psycopg2.connect(
-            host=db_config["host"],
-            port=db_config["port"],
-            database=db_config["database"],
-            user=db_config["username"],
-            password=db_config["password"]
-        )
+        s = st.secrets["connections"]["postgresql"]
+        # Montamos a string de conexão manualmente para garantir que o Pooler entenda quem é o usuário
+        # Formato: postgres://usuario:senha@host:porta/database
+        dsn = f"postgresql://{s['username']}:{s['password']}@{s['host']}:{s['port']}/{s['database']}?sslmode=require"
+        
+        return psycopg2.connect(dsn)
     except Exception as e:
-        st.error(f"Erro de conexão com o Banco: {e}")
+        st.error(f"Erro ao conectar (Verifique se a senha no Secrets é 'Starbank2026'): {e}")
         return None
 
 def run_query(query, params=None):
@@ -66,14 +98,12 @@ def run_query(query, params=None):
         try:
             with conn.cursor() as cur:
                 cur.execute(query, params)
-                if query.strip().upper().startswith("SELECT"):
-                    return cur.fetchall()
-                else:
-                    conn.commit()
+                conn.commit()
+                if query.strip().upper().startswith("SELECT"): return cur.fetchall()
         except Exception as e:
             st.error(f"Erro SQL: {e}")
-            # Se der erro, tenta resetar a conexão para a próxima vez
-            st.cache_resource.clear()
+        finally:
+            conn.close()
     return None
 
 def make_hashes(password):
@@ -86,8 +116,10 @@ def generate_session_token(username):
 # --- LÓGICA DE NEGÓCIO ---
 
 def get_total_sales_count():
-    res = run_query("SELECT COUNT(*) FROM vendas")
-    return res[0][0] if res else 0
+    try:
+        res = run_query("SELECT COUNT(*) FROM vendas")
+        return res[0][0] if res else 0
+    except: return 0
 
 def get_streak(username):
     res = run_query("SELECT DISTINCT data FROM vendas WHERE username = %s ORDER BY data DESC", (username,))
@@ -107,16 +139,17 @@ def get_streak(username):
     return streak
 
 def get_global_ticker_data():
-    res = run_query("SELECT username, valor, produto FROM vendas ORDER BY id DESC LIMIT 5")
-    if not res: return ["💎 Sistema Starbank Online"]
-    msgs = []
-    for row in res:
-        user_short = row[0].split()[0]
-        # Garante que é float antes de formatar
-        val = float(row[1])
-        msgs.append(f"⚡ LIVE: {user_short.upper()} VENDEU R$ {val:,.2f} ({row[2]})")
-    msgs.append("🚀 FOCO NA META: R$ 50k")
-    return msgs
+    try:
+        res = run_query("SELECT username, valor, produto FROM vendas ORDER BY id DESC LIMIT 5")
+        if not res: return ["💎 Sistema Starbank Online"]
+        msgs = []
+        for row in res:
+            user_short = row[0].split()[0]
+            val = float(row[1])
+            msgs.append(f"⚡ LIVE: {user_short.upper()} VENDEU R$ {val:,.2f} ({row[2]})")
+        msgs.append("🚀 FOCO NA META: R$ 50k")
+        return msgs
+    except: return ["🚀 INICIANDO SISTEMA..."]
 
 # --- FUNÇÕES BÁSICAS ---
 def login_user(username, password):
@@ -127,13 +160,12 @@ def get_user_role(username):
     return res[0][0] if res else 'operador'
 
 def create_user(username, password, role='operador'):
-    # Verifica duplicidade antes de inserir
     check = run_query("SELECT * FROM users WHERE username = %s", (username,))
     if check:
-        st.error("Usuário já existe!")
+        st.error("❌ Usuário já existe!")
     else:
         run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
-        st.success("Criado com sucesso!")
+        st.success("✅ Criado com sucesso! Faça login.")
 
 def add_venda(username, data, cliente, convenio, produto, valor):
     run_query("INSERT INTO vendas(username, data, cliente, convenio, produto, valor) VALUES (%s, %s, %s, %s, %s, %s)", (username, data, cliente, convenio, produto, valor))
@@ -147,7 +179,6 @@ def get_vendas_df(target_user=None):
     if conn:
         query = "SELECT id, username, data, cliente, convenio, produto, valor FROM vendas"
         if target_user and target_user != "Todos":
-            # Pandas read_sql com params para segurança
             df = pd.read_sql(query + " WHERE username = %s", conn, params=(target_user,))
         else:
             df = pd.read_sql(query, conn)
@@ -190,32 +221,12 @@ if not st.session_state['logged_in'] and "user" in qp and "token" in qp:
 # TELA DE LOGIN
 # ==================================================
 if not st.session_state['logged_in']:
-    st.markdown("""
-        <style>
-            .holo-container {
-                background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 50px;
-                backdrop-filter: blur(20px); border: 2px solid rgba(0, 212, 255, 0.3); box-shadow: 0 0 80px rgba(0, 212, 255, 0.2);
-                text-align: center; position: relative; overflow: hidden;
-            }
-            .holo-container::before {
-                content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-                background: linear-gradient(to bottom, transparent, rgba(0, 212, 255, 0.4), transparent);
-                transform: rotate(45deg); animation: scanner 6s linear infinite; pointer-events: none;
-            }
-            @keyframes scanner { 0% {top: -200%;} 100% {top: 200%;} }
-            div[data-testid="stTextInput"] input {
-                background: transparent !important; border: none !important; border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important;
-            }
-            div[data-testid="stTextInput"] input:focus { border-bottom-color: #00d4ff !important; }
-        </style>
-    """, unsafe_allow_html=True)
-    
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="holo-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="color:white; font-family: Rajdhani; letter-spacing: 3px;">STARBANK</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color:#00d4ff;">/// Acesso Seguro v8.0 ///</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#00d4ff;">/// Acesso Seguro v19.0 ///</p>', unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["ENTRAR", "REGISTRAR"])
         with tab1:
@@ -226,12 +237,13 @@ if not st.session_state['logged_in']:
                 if res:
                     st.session_state['logged_in'] = True
                     st.session_state['username'] = u
-                    st.session_state['role'] = res[0][2] if res[0][2] else 'operador' # Garante role
+                    st.session_state['role'] = res[0][2] if res[0][2] else 'operador'
                     st.query_params["user"] = u
                     st.query_params["token"] = generate_session_token(u)
                     st.rerun()
-                else: st.error("Acesso Negado")
+                else: st.error("Acesso Negado: Usuário ou Senha incorretos.")
         with tab2:
+            st.info("O acesso será criado no Banco de Dados.")
             nu = st.text_input("Novo ID", key="n_u")
             np = st.text_input("Nova Senha", type="password", key="n_p")
             if st.button("CRIAR"):
@@ -243,24 +255,12 @@ if not st.session_state['logged_in']:
 
 else:
     # ==================================================
-    # DASHBOARD CYBERPUNK
+    # DASHBOARD
     # ==================================================
     user = st.session_state['username']
     role = st.session_state.get('role', 'operador')
 
-    # --- LÓGICA DO TICKER ---
-    if 'last_sales_count' not in st.session_state:
-        st.session_state['last_sales_count'] = 0
-    
-    current_sales_count = get_total_sales_count()
-    
-    if current_sales_count > st.session_state['last_sales_count']:
-        show_ticker = True
-        st.session_state['last_sales_count'] = current_sales_count
-    else:
-        show_ticker = False
-    
-    # Sempre mostra o ticker se quiser, ou só quando atualiza. Vou deixar fixo pra ficar bonito
+    # TICKER FIXO
     ticker_msgs = get_global_ticker_data()
     ticker_html = f"""
     <div class="ticker-wrap">
@@ -271,7 +271,7 @@ else:
     """
     st.markdown(ticker_html, unsafe_allow_html=True)
 
-    # --- SIDEBAR ---
+    # SIDEBAR
     streak_count = get_streak(user)
     with st.sidebar:
         st.markdown(f"<h2 style='color: #00d4ff;'>👤 {user.upper()}</h2>", unsafe_allow_html=True)
@@ -302,11 +302,9 @@ else:
                 else:
                     st.warning("Valor inválido")
 
-    # --- ÁREA PRINCIPAL ---
+    # ÁREA PRINCIPAL
     filtro = user
-    # Lista de admins manuais se role não estiver funcionando direito
     admins = ["Maicon Nascimento", "Brunno Leonard", "Fernanda Gomes", "Christian Serello"]
-    
     if role == 'admin' or user in admins:
         op = ["Todos"] + get_all_users()
         sel = st.selectbox("VISÃO GLOBAL (ADMIN):", op)
@@ -317,7 +315,6 @@ else:
     total = df['valor'].sum() if not df.empty else 0.0
     nivel, cor_nivel, msg, icone = get_motivational_data(total, META)
 
-    # Banner
     st.markdown(f"""
         <div class="cyber-banner" style="border-color: {cor_nivel}; box-shadow: 0 0 20px {cor_nivel}40;">
             <h2 style="margin:0; color: white; letter-spacing: 2px;">{icone} STATUS DO OPERADOR: {user.upper()}</h2>
