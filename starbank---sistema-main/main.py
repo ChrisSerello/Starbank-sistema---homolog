@@ -13,21 +13,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS CYBER (MANTIDO) ---
+# --- CSS CYBER (VISUAL FINAL) ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
         .stAppDeployButton { display: none; }
         header[data-testid="stHeader"] { background-color: transparent !important; }
         html, body, [class*="css"] { font-family: 'Rajdhani', sans-serif; }
-        .stApp { background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
+
+        /* BACKGROUND */
+        .stApp {
+            background: linear-gradient(-45deg, #020024, #090979, #00d4ff, #7b1fa2);
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
+        }
         @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
-        .holo-container { background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 50px; backdrop-filter: blur(20px); border: 2px solid rgba(0, 212, 255, 0.3); box-shadow: 0 0 80px rgba(0, 212, 255, 0.2); text-align: center; margin-top: 50px; }
-        div[data-testid="stTextInput"] input { background: transparent !important; border: none !important; border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important; }
+        
+        /* LOGIN */
+        .holo-container {
+            background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 50px;
+            backdrop-filter: blur(20px); border: 2px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 80px rgba(0, 212, 255, 0.2); text-align: center;
+            position: relative; overflow: hidden; margin-top: 50px;
+        }
+        
+        div[data-testid="stTextInput"] input {
+            background: transparent !important; border: none !important;
+            border-bottom: 2px solid rgba(255,255,255,0.2) !important; color: white !important;
+        }
+        
+        /* TICKER */
         .ticker-wrap { width: 100%; overflow: hidden; background-color: rgba(0, 0, 0, 0.6); border-y: 1px solid #00d4ff; padding: 10px 0; margin-bottom: 20px; }
         .ticker { display: inline-block; padding-left: 100%; animation: ticker-anim 30s linear infinite; } 
         .ticker__item { display: inline-block; padding: 0 2rem; font-size: 1.2rem; color: #FFFFFF; font-weight: bold; text-shadow: 0 0 5px #00ff41; }
         @keyframes ticker-anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+        /* CARDS */
         .cyber-banner { padding: 20px; border-radius: 12px; background: rgba(10, 10, 30, 0.8); border: 1px solid; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         div[data-testid="stMetric"] { background: rgba(5, 15, 30, 0.7); border: 1px solid rgba(0, 212, 255, 0.2); backdrop-filter: blur(15px); border-radius: 12px; padding: 20px; }
         div[data-testid="stMetricLabel"] { color: #00d4ff !important; font-weight: 600; }
@@ -35,15 +55,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXÃO SQL ROBUSTA (CORREÇÃO DE ERRO) ---
+# --- CONEXÃO COM O BANCO (ROBUSTA) ---
 @st.cache_resource
 def init_connection():
     try:
-        # Pega as configs do Secrets
         db_config = st.secrets["connections"]["postgresql"]
-        
-        # Conecta explicitamente mapeando 'username' para 'user'
-        # Isso corrige o erro silencioso que estava acontecendo
         return psycopg2.connect(
             host=db_config["host"],
             port=db_config["port"],
@@ -52,7 +68,7 @@ def init_connection():
             password=db_config["password"]
         )
     except Exception as e:
-        st.error(f"⚠️ ERRO CRÍTICO DE CONEXÃO: {e}")
+        st.error(f"Erro de Conexão: {e}")
         return None
 
 def run_query(query, params=None):
@@ -64,13 +80,13 @@ def run_query(query, params=None):
                 conn.commit()
                 if query.strip().upper().startswith("SELECT"): return cur.fetchall()
         except Exception as e:
-            st.error(f"Erro ao executar comando SQL: {e}")
+            st.error(f"Erro SQL: {e}")
         finally:
             conn.close()
     return None
 
 def init_db():
-    # Tenta criar as tabelas. Se falhar, o erro vai aparecer na tela.
+    # Cria Tabela de Vendas
     run_query("""
         CREATE TABLE IF NOT EXISTS vendas (
             id SERIAL PRIMARY KEY,
@@ -82,6 +98,7 @@ def init_db():
             valor NUMERIC(10,2)
         );
     """)
+    # Cria Tabela de Usuários (Modo SQL Simples)
     run_query("""
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY, 
@@ -94,28 +111,24 @@ def init_db():
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
-# --- FUNÇÕES ---
+# --- LOGIN E CADASTRO ---
 def login_user(username, password):
-    # Verifica se a tabela existe antes de tentar logar
     return run_query("SELECT * FROM users WHERE username = %s AND password = %s", (username, make_hashes(password)))
 
 def create_user(username, password, role='operador'):
-    # Verifica duplicidade
-    try:
-        check = run_query("SELECT * FROM users WHERE username = %s", (username,))
-        if check:
-            return "❌ Usuário já existe!"
-        else:
-            run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
-            return "✅ Criado com sucesso! Agora vá na aba ENTRAR."
-    except Exception as e:
-        return f"Erro ao criar: {e}"
+    check = run_query("SELECT * FROM users WHERE username = %s", (username,))
+    if check:
+        return "❌ Usuário já existe!"
+    else:
+        run_query("INSERT INTO users(username, password, role) VALUES (%s, %s, %s)", (username, make_hashes(password), role))
+        return "✅ Criado com sucesso! Vá para a aba ENTRAR."
 
+# --- METAS E COMISSÕES (ATUALIZADAS) ---
 def calcular_comissao_tier(total):
-    if total >= 150000: return total * 0.0150 
-    elif total >= 101000: return total * 0.0125 
-    elif total >= 80000: return total * 0.0100 
-    elif total >= 50000: return total * 0.0050 
+    if total >= 150000: return total * 0.0150 # 1.5%
+    elif total >= 101000: return total * 0.0125 # 1.25%
+    elif total >= 80000: return total * 0.0100 # 1.0%
+    elif total >= 50000: return total * 0.0050 # 0.5%
     else: return 0.0
 
 def definir_meta_atual(total):
@@ -190,7 +203,7 @@ if not st.session_state['logged_in']:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<div class="holo-container">', unsafe_allow_html=True)
         st.markdown('<h1 style="color:white; font-family: Rajdhani; letter-spacing: 3px;">STARBANK</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color:#00d4ff;">/// Acesso SQL v17.0 (Correção) ///</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#00d4ff;">/// Acesso SQL v18.0 ///</p>', unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["ENTRAR", "REGISTRAR"])
         
@@ -204,11 +217,10 @@ if not st.session_state['logged_in']:
                     st.session_state['username'] = u
                     st.session_state['role'] = res[0][2] if res[0][2] else 'operador'
                     st.rerun()
-                else: 
-                    st.error("Acesso Negado: Usuário ou senha incorretos (ou a tabela 'users' ainda está vazia).")
+                else: st.error("Acesso Negado. Verifique usuário/senha.")
         
         with tab2:
-            st.info("Crie seu acesso. Ficará salvo na tabela 'users'.")
+            st.info("Crie seu acesso. Ficará salvo na tabela 'users' do Banco.")
             nu = st.text_input("Novo Usuário", key="n_u")
             np = st.text_input("Nova Senha", type="password", key="n_p")
             if st.button("CRIAR CONTA"):
@@ -256,7 +268,8 @@ else:
             st.rerun()
 
     filtro = user
-    if role == 'admin' or user.lower() in ["maicon", "brunno", "fernanda", "nair"]:
+    # Admins manuais + quem tiver role admin
+    if role == 'admin' or user.lower() in ["maicon", "brunno", "fernanda", "nair", "christian serello"]:
         col_admin, _ = st.columns([1, 3])
         with col_admin:
             op = ["Todos"] + get_all_users()
